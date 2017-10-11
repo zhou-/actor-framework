@@ -29,3 +29,5 @@ else()
 endif()
 
 add(caf-vec)
+add(client)
+add(server)
