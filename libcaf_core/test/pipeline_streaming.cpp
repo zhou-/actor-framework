@@ -410,14 +410,8 @@ CAF_TEST(depth_3_pipeline_50_items) {
   CAF_MESSAGE("the stage should delay its first batch since its underfull");
   disallow((downstream_msg::batch), from(stg).to(snk));
   next_cycle();
-  CAF_MESSAGE("the source shuts down and the stage sends the final batch");
-  expect((upstream_msg::ack_batch), from(stg).to(src));
-  expect((downstream_msg::close), from(src).to(stg));
-  expect((downstream_msg::batch), from(stg).to(snk));
-  next_cycle();
-  CAF_MESSAGE("the stage shuts down and the sink produces its final result");
-  expect((upstream_msg::ack_batch), from(snk).to(stg));
-  expect((downstream_msg::close), from(stg).to(snk));
+  CAF_MESSAGE("complete stream and check final result");
+  run();
   CAF_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 625);
 }
 
