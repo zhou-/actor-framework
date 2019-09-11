@@ -87,7 +87,7 @@ node_id abstract_actor::node() const noexcept {
 }
 
 actor_system& abstract_actor::home_system() const noexcept {
-  return *(actor_control_block::from(this)->home_system);
+  return actor_control_block::from(this)->system();
 }
 
 mailbox_element* abstract_actor::peek_at_next_mailbox_element() {

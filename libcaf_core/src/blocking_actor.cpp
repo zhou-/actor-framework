@@ -97,11 +97,11 @@ void blocking_actor::launch(execution_unit*, bool, bool hide) {
   std::thread([](strong_actor_ptr ptr) {
     // actor lives in its own thread
     detail::set_thread_name("caf.actor");
-    ptr->home_system->thread_started();
+    ptr->system().thread_started();
     auto this_ptr = ptr->get();
     CAF_ASSERT(dynamic_cast<blocking_actor*>(this_ptr) != nullptr);
     auto self = static_cast<blocking_actor*>(this_ptr);
-    CAF_SET_LOGGER_SYS(ptr->home_system);
+    CAF_SET_LOGGER_SYS(&ptr->system());
     CAF_PUSH_AID_FROM_PTR(self);
     self->initialize();
     error rsn;
@@ -125,8 +125,8 @@ void blocking_actor::launch(execution_unit*, bool, bool hide) {
     self->on_exit();
 #   endif
     self->cleanup(std::move(rsn), self->context());
-    ptr->home_system->thread_terminates();
-    ptr->home_system->dec_detached_threads();
+    ptr->system().thread_terminates();
+    ptr->system().dec_detached_threads();
   }, strong_actor_ptr{ctrl()}).detach();
 }
 

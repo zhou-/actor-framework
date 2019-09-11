@@ -60,24 +60,33 @@ public:
   actor_addr& operator=(std::nullptr_t);
 
   /// Returns the ID of this actor.
-  inline actor_id id() const noexcept {
+  /// @pre `*this != nullptr`
+  actor_id id() const noexcept {
     return ptr_->id();
   }
 
   /// Returns the origin node of this actor.
-  inline node_id node() const noexcept {
+  /// @pre `*this != nullptr`
+  node_id node() const noexcept {
     return ptr_->node();
   }
 
   /// Returns the hosting actor system.
-  inline actor_system& home_system() const noexcept {
-    return *ptr_->home_system;
+  /// @pre `*this != nullptr`
+  actor_system& system() const noexcept {
+    return ptr_->system();
+  }
+
+  /// Returns the hosting actor system.
+  /// @pre `*this != nullptr`
+  actor_system& home_system() const noexcept {
+    return ptr_->system();
   }
 
   /// Exchange content of `*this` and `other`.
   void swap(actor_addr& other) noexcept;
 
-  inline explicit operator bool() const {
+  explicit operator bool() const {
     return static_cast<bool>(ptr_);
   }
 
@@ -92,11 +101,11 @@ public:
 
   intptr_t compare(const actor_control_block* other) const noexcept;
 
-  inline intptr_t compare(const weak_actor_ptr& other) const noexcept {
+  intptr_t compare(const weak_actor_ptr& other) const noexcept {
     return compare(other.get());
   }
 
-  inline intptr_t compare(const strong_actor_ptr& other) const noexcept {
+  intptr_t compare(const strong_actor_ptr& other) const noexcept {
     return compare(other.get());
   }
 
@@ -121,18 +130,18 @@ public:
 
   actor_addr(actor_control_block*, bool);
 
-  inline actor_control_block* get() const noexcept {
+  actor_control_block* get() const noexcept {
     return ptr_.get();
   }
 
   /// @endcond
 
 private:
-  inline actor_control_block* release() noexcept {
+  actor_control_block* release() noexcept {
     return ptr_.release();
   }
 
-  inline actor_control_block* get_locked() const noexcept {
+  actor_control_block* get_locked() const noexcept {
     return ptr_.get_locked();
   }
 
@@ -163,7 +172,7 @@ inline bool operator!=(std::nullptr_t, const actor_addr& x) {
 namespace std {
 template <>
 struct hash<caf::actor_addr> {
-  inline size_t operator()(const caf::actor_addr& ref) const {
+  size_t operator()(const caf::actor_addr& ref) const {
     return static_cast<size_t>(ref.id());
   }
 };

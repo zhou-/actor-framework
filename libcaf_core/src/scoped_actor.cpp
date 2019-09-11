@@ -72,7 +72,7 @@ scoped_actor::~scoped_actor() {
   CAF_SET_AID(prev_);
 }
 
-blocking_actor* scoped_actor::ptr() const {
+blocking_actor* scoped_actor::ptr() const noexcept {
   return static_cast<blocking_actor*>(actor_cast<abstract_actor*>(self_));
 }
 

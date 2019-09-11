@@ -166,18 +166,18 @@ class typed_actor : detail::comparable<typed_actor<Sigs...>>,
     return *this;
   }
 
-  inline typed_actor& operator=(std::nullptr_t) {
+  typed_actor& operator=(std::nullptr_t) {
     ptr_.reset();
     return *this;
   }
 
   /// Queries whether this actor handle is valid.
-  inline explicit operator bool() const {
+  explicit operator bool() const {
     return static_cast<bool>(ptr_);
   }
 
   /// Queries whether this actor handle is invalid.
-  inline bool operator!() const {
+  bool operator!() const {
     return !ptr_;
   }
 
@@ -197,8 +197,13 @@ class typed_actor : detail::comparable<typed_actor<Sigs...>>,
   }
 
   /// Returns the hosting actor system.
-  inline actor_system& home_system() const noexcept {
-    return *ptr_->home_system;
+  actor_system& system() const noexcept {
+    return ptr_->system();
+  }
+
+  /// Returns the hosting actor system.
+  actor_system& home_system() const noexcept {
+    return ptr_->system();
   }
 
   /// Exchange content of `*this` and `other`.

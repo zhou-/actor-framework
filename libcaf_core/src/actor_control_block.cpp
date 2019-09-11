@@ -18,20 +18,34 @@
 
 #include "caf/actor_control_block.hpp"
 
+#include "caf/abstract_actor.hpp"
+#include "caf/actor_system.hpp"
+#include "caf/mailbox_element.hpp"
+#include "caf/message.hpp"
+#include "caf/proxy_registry.hpp"
 #include "caf/to_string.hpp"
 
-
-
-
-#include "caf/message.hpp"
-#include "caf/actor_system.hpp"
-#include "caf/proxy_registry.hpp"
-#include "caf/abstract_actor.hpp"
-#include "caf/mailbox_element.hpp"
-
-#include "caf/detail/disposer.hpp"
-
 namespace caf {
+
+actor_control_block::actor_control_block(actor_id x, node_id& y,
+                                         actor_system* sys,
+                                         data_deleter delete_data,
+                                         block_deleter delete_block,
+                                         mpi_type* mpi)
+  : strong_refs_(1),
+    weak_refs_(1),
+    aid_(x),
+    nid_(std::move(y)),
+    system_(sys),
+    delete_data_(delete_data),
+    delete_block_(delete_block),
+    mpi_(mpi) {
+  // nop
+}
+
+actor_control_block::~actor_control_block() {
+  // nop
+}
 
 actor_addr actor_control_block::address() {
   return {this, true};
@@ -48,26 +62,28 @@ void actor_control_block::enqueue(mailbox_element_ptr what,
 }
 
 bool intrusive_ptr_upgrade_weak(actor_control_block* x) {
-  auto count = x->strong_refs.load();
+  auto count = x->strong_refs_.load();
   while (count != 0)
-    if (x->strong_refs.compare_exchange_weak(count, count + 1,
-                                             std::memory_order_relaxed))
+    if (x->strong_refs_.compare_exchange_weak(count, count + 1,
+                                              std::memory_order_relaxed))
       return true;
   return false;
 }
 
 void intrusive_ptr_release_weak(actor_control_block* x) {
   // destroy object if last weak pointer expires
-  if (x->weak_refs == 1
-      || x->weak_refs.fetch_sub(1, std::memory_order_acq_rel) == 1)
-    x->block_dtor(x);
+  if (x->weak_refs_ == 1
+      || x->weak_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    auto deleter = x->delete_block_;
+    deleter(x);
+  }
 }
 
 void intrusive_ptr_release(actor_control_block* x) {
   // release implicit weak pointer if the last strong ref expires
   // and destroy the data block
-  if (x->strong_refs.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-    x->data_dtor(x->get());
+  if (x->strong_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    x->delete_data_(x->get());
     intrusive_ptr_release_weak(x);
   }
 }
@@ -114,9 +130,9 @@ namespace {
 
 void append_to_string_impl(std::string& x, const actor_control_block* y) {
   if (y != nullptr) {
-    x += std::to_string(y->aid);
+    x += std::to_string(y->id());
     x += '@';
-    append_to_string(x, y->nid);
+    append_to_string(x, y->node());
   } else {
     x += "0@invalid-node";
   }
