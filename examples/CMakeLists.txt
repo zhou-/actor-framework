@@ -31,6 +31,7 @@ add(message_passing typed_calculator)
 
 # streaming API
 add(streaming integer_stream)
+add(streaming manual_pushing)
 
 # dynamic behavior changes using 'become'
 add(dynamic_behavior skip_messages)
