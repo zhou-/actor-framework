@@ -83,6 +83,7 @@ set(LIBCAF_CORE_SRCS
   src/message_data.cpp
   src/message_handler.cpp
   src/message_view.cpp
+  src/messaging_interface.cpp
   src/monitorable_actor.cpp
   src/node_id.cpp
   src/outbound_path.cpp
