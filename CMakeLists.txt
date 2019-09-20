@@ -4,7 +4,7 @@ project(caf C CXX)
 include(CheckCSourceCompiles)
 include(CheckCSourceRuns)
 
-# Set default install paths. 
+# Set default install paths.
 # See https://cmake.org/cmake/help/latest/module/GNUInstallDirs.html
 include(GNUInstallDirs)
 
@@ -245,13 +245,27 @@ endif()
 # enable a ton of warnings if --more-clang-warnings is used
 if(CAF_MORE_WARNINGS)
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(WFLAGS "-Weverything -Wno-c++98-compat -Wno-padded "
-               "-Wno-documentation-unknown-command -Wno-exit-time-destructors "
-               "-Wno-global-constructors -Wno-missing-prototypes "
-               "-Wno-c++98-compat-pedantic -Wno-unused-member-function "
-               "-Wno-unused-const-variable -Wno-switch-enum "
-               "-Wno-abstract-vbase-init -Wno-shadow "
-               "-Wno-missing-noreturn -Wno-covered-switch-default")
+    set(WFLAGS "-Wcast-align -Wcast-qual -Wconditional-uninitialized "
+               "-Wconsumed -Wconversion -Wdate-time -Wdeprecated "
+               "-Wdocumentation -Wno-documentation-deprecated-sync "
+               "-Wfloat-conversion -Wfloat-equal -Wfloat-overflow-conversion "
+               "-Wfloat-zero-conversion -Wfour-char-constants "
+               "-Wglobal-constructors -Wheader-hygiene -Widiomatic-parentheses "
+               "-Wimplicit-fallthrough "
+               "-Winconsistent-missing-destructor-override "
+               "-Wlanguage-extension-token -Wlogical-op-parentheses "
+               "-Wloop-analysis -Wmethod-signatures -Wnested-anon-types "
+               "-Wnewline-eof -Wold-style-cast -Wover-aligned "
+               "-Woverlength-strings -Woverriding-method-mismatch "
+               "-Wshadow-field -Wshadow-ivar -Wshadow-uncaptured-local "
+               "-Wshift-sign-overflow -Wshorten-64-to-32 "
+               "-Wsometimes-uninitialized -Wstring-conversion "
+               "-Wsuper-class-method-mismatch -Wthread-safety -Wundef "
+               "-Wundefined-internal-type -Wundefined-reinterpret-cast "
+               "-Wunneeded-internal-declaration -Wunneeded-member-function "
+               "-Wunreachable-code -Wvla -Wweak-template-vtables "
+               "-Wweak-vtables -Wzero-as-null-pointer-constant "
+               "-Wzero-length-array")
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(WFLAGS "-Waddress -Wall -Warray-bounds "
                "-Wattributes -Wbuiltin-macro-redefined -Wcast-align "
