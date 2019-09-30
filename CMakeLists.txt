@@ -267,25 +267,16 @@ if(CAF_MORE_WARNINGS)
                "-Wweak-vtables -Wzero-as-null-pointer-constant "
                "-Wzero-length-array")
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(WFLAGS "-Waddress -Wall -Warray-bounds "
-               "-Wattributes -Wbuiltin-macro-redefined -Wcast-align "
-               "-Wcast-qual -Wchar-subscripts -Wclobbered -Wcomment "
-               "-Wconversion -Wconversion-null -Wcoverage-mismatch "
+    set(WFLAGS "-Wall -Wattributes -Wbuiltin-macro-redefined -Wcast-align "
+               "-Wcast-qual -Wconversion -Wconversion-null -Wcoverage-mismatch "
                "-Wcpp -Wdelete-non-virtual-dtor -Wdeprecated "
                "-Wdeprecated-declarations -Wdiv-by-zero -Wdouble-promotion "
-               "-Wempty-body -Wendif-labels -Wenum-compare -Wextra "
-               "-Wfloat-equal -Wformat -Wfree-nonheap-object "
-               "-Wignored-qualifiers -Winit-self "
+               "-Wendif-labels -Wextra -Wfloat-equal -Wfree-nonheap-object "
                "-Winline -Wint-to-pointer-cast -Winvalid-memory-model "
-               "-Winvalid-offsetof -Wlogical-op -Wmain -Wmaybe-uninitialized "
-               "-Wmissing-braces -Wmultichar "
-               "-Wnarrowing -Wnoexcept -Wnon-template-friend "
-               "-Wnon-virtual-dtor -Wnonnull -Woverflow "
-               "-Woverlength-strings -Wparentheses "
-               "-Wpmf-conversions -Wpointer-arith -Wreorder "
-               "-Wreturn-type -Wsequence-point "
-               "-Wsign-compare -Wswitch -Wtype-limits -Wundef "
-               "-Wuninitialized -Wunused -Wvla -Wwrite-strings")
+               "-Winvalid-offsetof -Wlogical-op -Wmain -Wmultichar "
+               "-Wnoexcept -Wnon-template-friend -Wnon-virtual-dtor -Woverflow "
+               "-Woverlength-strings -Wpmf-conversions -Wpointer-arith "
+               "-Wundef -Wunused -Wvla -Wwrite-strings")
   endif()
   # convert CMake list to a single string, erasing the ";" separators
   string(REPLACE ";" "" WFLAGS_STR ${WFLAGS})
