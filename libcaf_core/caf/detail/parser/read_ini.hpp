@@ -101,8 +101,8 @@ void read_ini_list(State& ps, Consumer&& consumer) {
 template <class State, class Consumer>
 void read_ini_map(State& ps, Consumer&& consumer) {
   std::string key;
-  auto alnum_or_dash = [](char x) {
-    return isalnum(x) || x == '-' || x == '_';
+  auto key_identifier = [](char x) {
+    return isgraph(x) && x != '=' && x != '}';
   };
   // clang-format off
   start();
@@ -112,12 +112,12 @@ void read_ini_map(State& ps, Consumer&& consumer) {
   state(await_key_name) {
     transition(await_key_name, " \t\n")
     fsm_epsilon(read_ini_comment(ps, consumer), await_key_name, ';')
-    transition(read_key_name, alphabetic_chars, key = ch)
+    transition(read_key_name, key_identifier, key = ch)
     transition(done, '}', consumer.end_map())
   }
   // Reads a key of a "key=value" line.
   state(read_key_name) {
-    transition(read_key_name, alnum_or_dash, key += ch)
+    transition(read_key_name, key_identifier, key += ch)
     epsilon(await_assignment)
   }
   // Reads the assignment operator in a "key=value" line.
@@ -145,7 +145,7 @@ void read_ini_map(State& ps, Consumer&& consumer) {
     transition(await_key_name, ',')
     transition(done, '}', consumer.end_map())
     fsm_epsilon(read_ini_comment(ps, consumer), had_newline, ';')
-    epsilon(read_key_name, alnum_or_dash)
+    epsilon(read_key_name, key_identifier)
   }
   term_state(done) {
     //nop
