@@ -76,8 +76,13 @@ attach_stream_stage(scheduled_actor* self, const stream<In>& in,
                 "Expected signature `void (State&)` for init function");
   static_assert(std::is_same<
                   void(state_type&, downstream<output_type>&, In),
-                  typename detail::get_callable_trait<Fun>::fun_sig>::value,
-                "Expected signature `void (State&, downstream<Out>&, In)` "
+                  typename detail::get_callable_trait<Fun>::fun_sig>::value
+                  || std::is_same<
+                    void(state_type&, downstream<output_type>&,
+                         std::vector<In>&),
+                    typename detail::get_callable_trait<Fun>::fun_sig>::value,
+                "Expected signature `void (State&, downstream<Out>&, In)` or "
+                "`void (State&, downstream<Out>&, std::vector<In>&)` "
                 "for consume function");
   using driver = detail::stream_stage_driver_impl<
     typename Trait::input, DownstreamManager, Fun, Finalize>;
