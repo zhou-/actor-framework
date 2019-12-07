@@ -37,9 +37,4 @@ ref_counted& ref_counted::operator=(const ref_counted&) {
   return *this;
 }
 
-void ref_counted::deref() const noexcept {
-  if (unique() || rc_.fetch_sub(1, std::memory_order_acq_rel) == 1)
-    delete this;
-}
-
 } // namespace caf

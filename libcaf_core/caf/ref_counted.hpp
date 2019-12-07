@@ -44,7 +44,10 @@ public:
 
   /// Decreases reference count by one and deletes this object when reaching
   /// zero.
-  void deref() const noexcept;
+  void deref() const noexcept {
+    if (unique() || rc_.fetch_sub(1, std::memory_order_acq_rel) == 1)
+      delete this;
+  }
 
   /// Queries whether there is exactly one reference.
   bool unique() const noexcept {
