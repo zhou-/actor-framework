@@ -219,7 +219,6 @@ endif(CAF_USE_CCACHE)
 pretty_yes("CAF_FORCE_NO_EXCEPTIONS")
 
 pretty_no("CAF_ENABLE_RUNTIME_CHECKS")
-pretty_no("CAF_NO_MEM_MANAGEMENT")
 pretty_no("CAF_NO_EXCEPTIONS")
 pretty_no("CAF_NO_OPENSSL")
 pretty_no("CAF_NO_PYTHON")
@@ -630,7 +629,6 @@ invertYesNo(CAF_NO_EXAMPLES CAF_BUILD_EXAMPLES)
 invertYesNo(CAF_NO_TOOLS CAF_BUILD_TOOLS)
 invertYesNo(CAF_NO_UNIT_TESTS CAF_BUILD_UNIT_TESTS)
 invertYesNo(CAF_NO_EXCEPTIONS CAF_BUILD_WITH_EXCEPTIONS)
-invertYesNo(CAF_NO_MEM_MANAGEMENT CAF_BUILD_MEM_MANAGEMENT)
 invertYesNo(CAF_NO_OPENSSL CAF_BUILD_OPENSSL)
 invertYesNo(CAF_NO_PYTHON CAF_BUILD_PYTHON)
 # collect all compiler flags
@@ -650,7 +648,6 @@ if(NOT CAF_NO_SUMMARY)
         "\nBuild static runtime:  ${CAF_BUILD_STATIC_RUNTIME}"
         "\nRuntime checks:        ${CAF_ENABLE_RUNTIME_CHECKS}"
         "\nLog level:             ${CAF_LOG_LEVEL}"
-        "\nWith mem. mgmt.:       ${CAF_BUILD_MEM_MANAGEMENT}"
         "\nWith exceptions:       ${CAF_BUILD_WITH_EXCEPTIONS}"
         "\n"
         "\nBuild I/O module:      ${CAF_BUILD_IO}"

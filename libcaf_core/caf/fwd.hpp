@@ -279,7 +279,6 @@ class stream_distribution_tree;
 
 class abstract_worker;
 class abstract_worker_hub;
-class disposer;
 class dynamic_message_data;
 class group_manager;
 class message_data;
@@ -309,7 +308,7 @@ using stream_manager_ptr = intrusive_ptr<stream_manager>;
 
 // -- unique pointer aliases ---------------------------------------------------
 
-using mailbox_element_ptr = std::unique_ptr<mailbox_element, detail::disposer>;
+using mailbox_element_ptr = std::unique_ptr<mailbox_element>;
 using tracing_data_ptr = std::unique_ptr<tracing_data>;
 using type_erased_value_ptr = std::unique_ptr<type_erased_value>;
 

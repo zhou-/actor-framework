@@ -24,13 +24,11 @@
 #include "caf/actor_control_block.hpp"
 #include "caf/config.hpp"
 #include "caf/detail/core_export.hpp"
-#include "caf/detail/disposer.hpp"
 #include "caf/detail/tuple_vals.hpp"
 #include "caf/detail/type_erased_tuple_view.hpp"
 #include "caf/extend.hpp"
 #include "caf/intrusive/singly_linked.hpp"
 #include "caf/make_message.hpp"
-#include "caf/memory_managed.hpp"
 #include "caf/message.hpp"
 #include "caf/message_id.hpp"
 #include "caf/message_view.hpp"
@@ -44,7 +42,6 @@ namespace caf {
 
 class CAF_CORE_EXPORT mailbox_element
   : public intrusive::singly_linked<mailbox_element>,
-    public memory_managed,
     public message_view {
 public:
   using forwarding_stack = std::vector<strong_actor_ptr>;
@@ -195,7 +192,7 @@ public:
 };
 
 /// @relates mailbox_element
-using mailbox_element_ptr = std::unique_ptr<mailbox_element, detail::disposer>;
+using mailbox_element_ptr = std::unique_ptr<mailbox_element>;
 
 /// @relates mailbox_element
 CAF_CORE_EXPORT mailbox_element_ptr

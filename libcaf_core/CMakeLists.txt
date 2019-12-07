@@ -111,7 +111,6 @@ set(CAF_CORE_SOURCES
   src/mailbox_element.cpp
   src/make_config_option.cpp
   src/match_case.cpp
-  src/memory_managed.cpp
   src/message.cpp
   src/message_builder.cpp
   src/message_handler.cpp

@@ -21,8 +21,6 @@
 #include "caf/index_mapping.hpp"
 #include "caf/system_messages.hpp"
 
-#include "caf/detail/disposer.hpp"
-
 namespace caf::detail {
 
 merged_tuple::cow_ptr merged_tuple::make(message x, message y) {

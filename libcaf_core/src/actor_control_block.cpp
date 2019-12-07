@@ -18,18 +18,12 @@
 
 #include "caf/actor_control_block.hpp"
 
-#include "caf/to_string.hpp"
-
-
-
-
-#include "caf/message.hpp"
-#include "caf/actor_system.hpp"
-#include "caf/proxy_registry.hpp"
 #include "caf/abstract_actor.hpp"
+#include "caf/actor_system.hpp"
 #include "caf/mailbox_element.hpp"
-
-#include "caf/detail/disposer.hpp"
+#include "caf/message.hpp"
+#include "caf/proxy_registry.hpp"
+#include "caf/to_string.hpp"
 
 namespace caf {
 

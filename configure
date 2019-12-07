@@ -53,7 +53,6 @@ Usage: $0 [OPTION]... [VAR=VALUE]...
     --prefix=PREFIX             installation directory [/usr/local]
 
   Remove Standard Features (even if all dependencies are available):
-    --no-memory-management      build without memory management
     --no-examples               build without examples
     --no-curl-examples          build without libcurl examples
     --no-unit-tests             build without unit tests
@@ -240,9 +239,6 @@ while [ $# -ne 0 ]; do
             ;;
         --with-actor-profiler)
             append_cache_entry CAF_ENABLE_ACTOR_PROFILER BOOL yes
-            ;;
-        --no-memory-management)
-            append_cache_entry CAF_NO_MEM_MANAGEMENT BOOL yes
             ;;
         --more-warnings)
             append_cache_entry CAF_MORE_WARNINGS BOOL yes

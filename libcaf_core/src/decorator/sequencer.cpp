@@ -20,8 +20,6 @@
 
 #include "caf/actor_system.hpp"
 #include "caf/default_attachable.hpp"
-
-#include "caf/detail/disposer.hpp"
 #include "caf/detail/sync_request_bouncer.hpp"
 
 namespace caf::decorator {
