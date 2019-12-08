@@ -130,7 +130,7 @@ statically and dynamically typed event-based actors as well as brokers
   \hline
   \lstinline^exception_handler^ & \lstinline^function<error (pointer, std::exception_ptr&)>^ \\
   \hline
-  \lstinline^default_handler^ & \lstinline^function<result<message> (pointer, message_view&)>^ \\
+  \lstinline^default_handler^ & \lstinline^function<result<message> (pointer, message&)>^ \\
   \hline
   \lstinline^error_handler^ & \lstinline^function<void (pointer, error&)>^ \\
   \hline
@@ -485,7 +485,7 @@ self->receive(
   [&](const exit_msg& x) {
     // ...
   },
-  others >> [](message_view& x) -> result<message> {
+  others >> [](message& x) -> result<message> {
     // report unexpected message back to client
     return sec::unexpected_message;
   }

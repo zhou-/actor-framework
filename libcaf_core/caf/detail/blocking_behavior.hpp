@@ -34,7 +34,7 @@ public:
 
   virtual ~blocking_behavior();
 
-  virtual result<message> fallback(message_view&);
+  virtual result<message> fallback(message&);
 
   virtual duration timeout();
 
@@ -53,7 +53,7 @@ public:
 
   blocking_behavior_v2(blocking_behavior_v2&&) = default;
 
-  result<message> fallback(message_view& x) override {
+  result<message> fallback(message& x) override {
     return f.handler(x);
   }
 };
@@ -92,7 +92,7 @@ public:
 
   blocking_behavior_v4(blocking_behavior_v4&&) = default;
 
-  result<message> fallback(message_view& x) override {
+  result<message> fallback(message& x) override {
     return f1.handler(x);
   }
 

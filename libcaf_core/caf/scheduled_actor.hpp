@@ -84,22 +84,21 @@ namespace caf {
 
 /// @relates scheduled_actor
 /// Default handler function that sends the message back to the sender.
-CAF_CORE_EXPORT result<message> reflect(scheduled_actor*, message_view&);
+CAF_CORE_EXPORT result<message> reflect(scheduled_actor*, message&);
 
 /// @relates scheduled_actor
 /// Default handler function that sends
 /// the message back to the sender and then quits.
-CAF_CORE_EXPORT result<message>
-reflect_and_quit(scheduled_actor*, message_view&);
+CAF_CORE_EXPORT result<message> reflect_and_quit(scheduled_actor*, message&);
 
 /// @relates scheduled_actor
 /// Default handler function that prints messages
 /// message via `aout` and drops them afterwards.
-CAF_CORE_EXPORT result<message> print_and_drop(scheduled_actor*, message_view&);
+CAF_CORE_EXPORT result<message> print_and_drop(scheduled_actor*, message&);
 
 /// @relates scheduled_actor
 /// Default handler function that simply drops messages.
-CAF_CORE_EXPORT result<message> drop(scheduled_actor*, message_view&);
+CAF_CORE_EXPORT result<message> drop(scheduled_actor*, message&);
 
 /// A cooperatively scheduled, event-based actor implementation.
 /// @extends local_actor
@@ -191,8 +190,7 @@ public:
   using pointer = scheduled_actor*;
 
   /// Function object for handling unmatched messages.
-  using default_handler
-    = std::function<result<message>(pointer, message_view&)>;
+  using default_handler = std::function<result<message>(pointer, message&)>;
 
   /// Function object for handling error messages.
   using error_handler = std::function<void(pointer, error&)>;
@@ -551,7 +549,7 @@ public:
     CAF_IGNORE_UNUSED(token);
     CAF_ASSERT(current_mailbox_element() != nullptr);
     CAF_ASSERT(
-      current_mailbox_element()->content().match_elements<open_stream_msg>());
+      current_mailbox_element()->content.match_elements<open_stream_msg>());
     using output_type = typename stream_stage_trait_t<Fun>::output;
     using state_type = typename stream_stage_trait_t<Fun>::state;
     static_assert(
@@ -837,7 +835,7 @@ public:
   void erase_stream_manager(const stream_manager_ptr& mgr);
 
   /// Processes a stream handshake.
-  /// @pre `x.content().match_elements<open_stream_msg>()`
+  /// @pre `x.content.match_elements<open_stream_msg>()`
   invoke_message_result handle_open_stream_msg(mailbox_element& x);
 
   /// Advances credit and batch timeouts and returns the timestamp when to call

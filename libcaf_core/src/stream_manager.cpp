@@ -290,12 +290,12 @@ stream_manager::add_unchecked_outbound_path_impl(message handshake) {
 stream_slot stream_manager::add_unchecked_inbound_path_impl(rtti_pair rtti) {
   CAF_LOG_TRACE("");
   auto x = self_->current_mailbox_element();
-  if (x == nullptr || !x->content().match_elements<open_stream_msg>()) {
+  if (x == nullptr || !x->content.match_elements<open_stream_msg>()) {
     CAF_LOG_ERROR("add_unchecked_inbound_path called, but current message "
                   "is not an open_stream_msg");
     return invalid_stream_slot;
   }
-  auto& osm = x->content().get_mutable_as<open_stream_msg>(0);
+  auto& osm = x->content.get_mutable_as<open_stream_msg>(0);
   if (out().terminal() && !self_->current_forwarding_stack().empty()) {
     // Sinks must always terminate the stream.
     CAF_LOG_WARNING("add_unchecked_inbound_path called in a sink, but the "

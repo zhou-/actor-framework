@@ -412,18 +412,18 @@ struct msg_visitor {
 
   result_type operator()(normal_async_id, entity::normal_queue&,
                          mailbox_element& x) {
-    CAF_REQUIRE_EQUAL(x.content().type_token(),
+    CAF_REQUIRE_EQUAL(x.content.type_token(),
                       make_type_token<open_stream_msg>());
     self->current_mailbox_element(&x);
-    (*self)(x.content().get_mutable_as<open_stream_msg>(0));
+    (*self)(x.content.get_mutable_as<open_stream_msg>(0));
     self->current_mailbox_element(nullptr);
     return intrusive::task_result::resume;
   }
 
   result_type operator()(umsg_id, entity::upstream_queue&, mailbox_element& x) {
-    CAF_REQUIRE(x.content().type_token() == make_type_token<upstream_msg>());
+    CAF_REQUIRE(x.content.type_token() == make_type_token<upstream_msg>());
     self->current_mailbox_element(&x);
-    auto& um = x.content().get_mutable_as<upstream_msg>(0);
+    auto& um = x.content.get_mutable_as<upstream_msg>(0);
     auto f = detail::make_overload(
       [&](upstream_msg::ack_open& y) {
         (*self)(um.slots, um.sender, y);
@@ -446,12 +446,12 @@ struct msg_visitor {
   result_type operator()(dmsg_id, entity::downstream_queue& qs, stream_slot,
                          policy::downstream_messages::nested_queue_type& q,
                          mailbox_element& x) {
-    CAF_REQUIRE(x.content().type_token() == make_type_token<downstream_msg>());
+    CAF_REQUIRE(x.content.type_token() == make_type_token<downstream_msg>());
     self->current_mailbox_element(&x);
     auto inptr = q.policy().handler.get();
     if (inptr == nullptr)
       return intrusive::task_result::stop;
-    auto& dm = x.content().get_mutable_as<downstream_msg>(0);
+    auto& dm = x.content.get_mutable_as<downstream_msg>(0);
     auto f = detail::make_overload(
       [&](downstream_msg::batch& y) {
         inptr->handle(y);

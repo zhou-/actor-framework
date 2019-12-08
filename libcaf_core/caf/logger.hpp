@@ -283,22 +283,11 @@ public:
   /// Returns a string representation of the joined groups of `x` if `x` is an
   /// actor with the `subscriber` mixin.
   template <class T>
-  static
-    typename std::enable_if<std::is_base_of<mixin::subscriber_base, T>::value,
-                            std::string>::type
-    joined_groups_of(const T& x) {
-    return deep_to_string(x.joined_groups());
-  }
-
-  /// Returns a string representation of an empty list if `x` is not an actor
-  /// with the `subscriber` mixin.
-  template <class T>
-  static
-    typename std::enable_if<!std::is_base_of<mixin::subscriber_base, T>::value,
-                            const char*>::type
-    joined_groups_of(const T& x) {
-    CAF_IGNORE_UNUSED(x);
-    return "[]";
+  static std::string joined_groups_of(const T& x) {
+    if constexpr (std::is_base_of<mixin::subscriber_base, T>::value)
+      return deep_to_string(x.joined_groups());
+    else
+      return "[]";
   }
 
   // -- thread-local properties ------------------------------------------------
@@ -567,7 +556,7 @@ CAF_CORE_EXPORT bool operator==(const logger::field& x, const logger::field& y);
              .c_str()                                                          \
         << "; FROM =" << ::caf::deep_to_string(ptr->sender).c_str()            \
         << "; STAGES =" << ::caf::deep_to_string(ptr->stages).c_str()          \
-        << "; CONTENT =" << ::caf::deep_to_string(ptr->content()).c_str())
+        << "; CONTENT =" << ::caf::deep_to_string(ptr->content).c_str())
 
 #  define CAF_LOG_RECEIVE_EVENT(ptr)                                           \
     CAF_LOG_IMPL(CAF_LOG_FLOW_COMPONENT, CAF_LOG_LEVEL_DEBUG,                  \
@@ -576,7 +565,7 @@ CAF_CORE_EXPORT bool operator==(const logger::field& x, const logger::field& y);
                    << "; STAGES ="                                             \
                    << ::caf::deep_to_string(ptr->stages).c_str()               \
                    << "; CONTENT ="                                            \
-                   << ::caf::deep_to_string(ptr->content()).c_str())
+                   << ::caf::deep_to_string(ptr->content).c_str())
 
 #  define CAF_LOG_REJECT_EVENT()                                               \
     CAF_LOG_IMPL(CAF_LOG_FLOW_COMPONENT, CAF_LOG_LEVEL_DEBUG, "REJECT")

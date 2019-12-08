@@ -40,10 +40,10 @@ invoke_message_result raw_event_based_actor::consume(mailbox_element& x) {
       // skip all messages until we receive the currently awaited response
       if (x.mid != pr.first)
         return invoke_message_result::skipped;
-      if (!pr.second(x.content())) {
+      if (!pr.second(x.content)) {
         // try again with error if first attempt failed
-        auto msg = make_message(
-          make_error(sec::unexpected_response, x.move_content_to_message()));
+        auto err = make_error(sec::unexpected_response, std::move(x.content));
+        auto msg = make_message(std::move(err));
         pr.second(msg);
       }
       awaited_responses_.pop_front();
@@ -55,19 +55,18 @@ invoke_message_result raw_event_based_actor::consume(mailbox_element& x) {
       // neither awaited nor multiplexed, probably an expired timeout
       if (mrh == multiplexed_responses_.end())
         return invoke_message_result::dropped;
-      if (!mrh->second(x.content())) {
+      if (!mrh->second(x.content)) {
         // try again with error if first attempt failed
-        auto msg = make_message(
-          make_error(sec::unexpected_response, x.move_content_to_message()));
+        auto err = make_error(sec::unexpected_response, std::move(x.content));
+        auto msg = make_message(std::move(err));
         mrh->second(msg);
       }
       multiplexed_responses_.erase(mrh);
       return invoke_message_result::consumed;
     }
-    auto& content = x.content();
     //  handle timeout messages
-    if (x.content().type_token() == make_type_token<timeout_msg>()) {
-      auto& tm = content.get_as<timeout_msg>(0);
+    if (x.content.type_token() == make_type_token<timeout_msg>()) {
+      auto& tm = x.content.get_as<timeout_msg>(0);
       auto tid = tm.timeout_id;
       CAF_ASSERT(x.mid.is_async());
       if (is_active_receive_timeout(tid)) {
@@ -92,7 +91,7 @@ invoke_message_result raw_event_based_actor::consume(mailbox_element& x) {
         setf(has_timeout_flag);
     });
     auto call_default_handler = [&] {
-      auto sres = call_handler(default_handler_, this, x);
+      auto sres = call_handler(default_handler_, this, x.content);
       switch (sres.flag) {
         default:
           break;
@@ -110,7 +109,7 @@ invoke_message_result raw_event_based_actor::consume(mailbox_element& x) {
                       : invoke_message_result::skipped;
     }
     auto& bhvr = bhvr_stack_.back();
-    switch (bhvr(visitor, x.content())) {
+    switch (bhvr(visitor, x.content)) {
       default:
         break;
       case match_case::skip:

@@ -34,25 +34,24 @@ namespace caf {
 
 // -- related free functions ---------------------------------------------------
 
-result<message> reflect(scheduled_actor*, message_view& x) {
-  return x.move_content_to_message();
+result<message> reflect(scheduled_actor*, message& x) {
+  return std::move(x);
 }
 
-result<message> reflect_and_quit(scheduled_actor* ptr, message_view& x) {
+result<message> reflect_and_quit(scheduled_actor* ptr, message& x) {
   error err = exit_reason::normal;
   scheduled_actor::default_error_handler(ptr, err);
   return reflect(ptr, x);
 }
 
-result<message> print_and_drop(scheduled_actor* ptr, message_view& x) {
-  CAF_LOG_WARNING("unexpected message" << CAF_ARG(x.content()));
+result<message> print_and_drop(scheduled_actor* ptr, message& x) {
+  CAF_LOG_WARNING("unexpected message" << CAF_ARG(x));
   aout(ptr) << "*** unexpected message [id: " << ptr->id()
-            << ", name: " << ptr->name() << "]: " << x.content().stringify()
-            << std::endl;
+            << ", name: " << ptr->name() << "]: " << to_string(x) << std::endl;
   return sec::unexpected_message;
 }
 
-result<message> drop(scheduled_actor*, message_view&) {
+result<message> drop(scheduled_actor*, message&) {
   return sec::unexpected_message;
 }
 
@@ -65,7 +64,7 @@ void silently_ignore(scheduled_actor*, T&) {
   // nop
 }
 
-result<message> drop_after_quit(scheduled_actor* self, message_view&) {
+result<message> drop_after_quit(scheduled_actor* self, message&) {
   if (self->current_message_id().is_request())
     return make_error(sec::request_receiver_down);
   return make_message();
@@ -282,11 +281,11 @@ struct upstream_msg_visitor {
 intrusive::task_result
 scheduled_actor::mailbox_visitor::operator()(size_t, upstream_queue&,
                                              mailbox_element& x) {
-  CAF_ASSERT(x.content().type_token() == make_type_token<upstream_msg>());
+  CAF_ASSERT(x.content.type_token() == make_type_token<upstream_msg>());
   self->current_mailbox_element(&x);
   CAF_LOG_RECEIVE_EVENT((&x));
   CAF_BEFORE_PROCESSING(self, x);
-  auto& um = x.content().get_mutable_as<upstream_msg>(0);
+  auto& um = x.content.get_mutable_as<upstream_msg>(0);
   upstream_msg_visitor f{self, um};
   visit(f, um.content);
   CAF_AFTER_PROCESSING(self, invoke_message_result::consumed);
@@ -348,8 +347,8 @@ intrusive::task_result scheduled_actor::mailbox_visitor::operator()(
   self->current_mailbox_element(&x);
   CAF_LOG_RECEIVE_EVENT((&x));
   CAF_BEFORE_PROCESSING(self, x);
-  CAF_ASSERT(x.content().type_token() == make_type_token<downstream_msg>());
-  auto& dm = x.content().get_mutable_as<downstream_msg>(0);
+  CAF_ASSERT(x.content.type_token() == make_type_token<downstream_msg>());
+  auto& dm = x.content.get_mutable_as<downstream_msg>(0);
   downstream_msg_visitor f{self, qs, q, dm};
   auto res = visit(f, dm.content);
   CAF_AFTER_PROCESSING(self, invoke_message_result::consumed);
@@ -547,17 +546,16 @@ void scheduled_actor::add_multiplexed_response_handler(message_id response_id,
 scheduled_actor::message_category
 scheduled_actor::categorize(mailbox_element& x) {
   CAF_LOG_TRACE(CAF_ARG(x));
-  auto& content = x.content();
-  switch (content.type_token()) {
+  switch (x.content.type_token()) {
     case make_type_token<atom_value, atom_value, std::string>():
-      if (content.get_as<atom_value>(0) == sys_atom::value
-          && content.get_as<atom_value>(1) == get_atom::value) {
+      if (x.content.get_as<atom_value>(0) == sys_atom::value
+          && x.content.get_as<atom_value>(1) == get_atom::value) {
         auto rp = make_response_promise();
         if (!rp.pending()) {
           CAF_LOG_WARNING("received anonymous ('get', 'sys', $key) message");
           return message_category::internal;
         }
-        auto& what = content.get_as<std::string>(2);
+        auto& what = x.content.get_as<std::string>(2);
         if (what == "info") {
           CAF_LOG_DEBUG("reply to 'info' message");
           rp.deliver(ok_atom::value, std::move(what), strong_actor_ptr{ctrl()},
@@ -570,7 +568,7 @@ scheduled_actor::categorize(mailbox_element& x) {
       return message_category::ordinary;
     case make_type_token<timeout_msg>(): {
       CAF_ASSERT(x.mid.is_async());
-      auto& tm = content.get_as<timeout_msg>(0);
+      auto& tm = x.content.get_as<timeout_msg>(0);
       auto tid = tm.timeout_id;
       if (tm.type == receive_atom::value) {
         CAF_LOG_DEBUG("handle ordinary timeout message");
@@ -584,7 +582,7 @@ scheduled_actor::categorize(mailbox_element& x) {
       return message_category::internal;
     }
     case make_type_token<exit_msg>(): {
-      auto em = content.move_if_unshared<exit_msg>(0);
+      auto em = x.content.move_if_unshared<exit_msg>(0);
       // make sure to get rid of attachables if they're no longer needed
       unlink_from(em.source);
       // exit_reason::kill is always fatal and also aborts streams.
@@ -608,12 +606,12 @@ scheduled_actor::categorize(mailbox_element& x) {
       return message_category::internal;
     }
     case make_type_token<down_msg>(): {
-      auto dm = content.move_if_unshared<down_msg>(0);
+      auto dm = x.content.move_if_unshared<down_msg>(0);
       call_handler(down_handler_, this, dm);
       return message_category::internal;
     }
     case make_type_token<error>(): {
-      auto err = content.move_if_unshared<error>(0);
+      auto err = x.content.move_if_unshared<error>(0);
       call_handler(error_handler_, this, err);
       return message_category::internal;
     }
@@ -638,7 +636,7 @@ invoke_message_result scheduled_actor::consume(mailbox_element& x) {
     using ptr_t = scheduled_actor*;
     using fun_t = bool (*)(ptr_t, behavior&, mailbox_element&);
     auto ordinary_invoke = [](ptr_t, behavior& f, mailbox_element& in) -> bool {
-      return f(in.content()) != none;
+      return f(in.content) != none;
     };
     auto select_invoke_fun = [&]() -> fun_t { return ordinary_invoke; };
     // Short-circuit awaited responses.
@@ -652,8 +650,8 @@ invoke_message_result scheduled_actor::consume(mailbox_element& x) {
       awaited_responses_.pop_front();
       if (!invoke(this, f, x)) {
         // try again with error if first attempt failed
-        auto msg = make_message(
-          make_error(sec::unexpected_response, x.move_content_to_message()));
+        auto err = make_error(sec::unexpected_response, std::move(x.content));
+        auto msg = make_message(std::move(err));
         f(msg);
       }
       return invoke_message_result::consumed;
@@ -669,8 +667,8 @@ invoke_message_result scheduled_actor::consume(mailbox_element& x) {
       multiplexed_responses_.erase(mrh);
       if (!invoke(this, bhvr, x)) {
         // try again with error if first attempt failed
-        auto msg = make_message(
-          make_error(sec::unexpected_response, x.move_content_to_message()));
+        auto err = make_error(sec::unexpected_response, std::move(x.content));
+        auto msg = make_message(std::move(err));
         bhvr(msg);
       }
       return invoke_message_result::consumed;
@@ -694,7 +692,7 @@ invoke_message_result scheduled_actor::consume(mailbox_element& x) {
             setf(has_timeout_flag);
         });
         auto call_default_handler = [&] {
-          auto sres = call_handler(default_handler_, this, x);
+          auto sres = call_handler(default_handler_, this, x.content);
           switch (sres.flag) {
             default:
               break;
@@ -712,7 +710,7 @@ invoke_message_result scheduled_actor::consume(mailbox_element& x) {
                           : invoke_message_result::skipped;
         }
         auto& bhvr = bhvr_stack_.back();
-        switch (bhvr(visitor, x.content())) {
+        switch (bhvr(visitor, x.content)) {
           default:
             break;
           case match_case::skip:
@@ -1095,8 +1093,8 @@ scheduled_actor::handle_open_stream_msg(mailbox_element& x) {
     }
   };
   // Extract the handshake part of the message.
-  CAF_ASSERT(x.content().match_elements<open_stream_msg>());
-  auto& osm = x.content().get_mutable_as<open_stream_msg>(0);
+  CAF_ASSERT(x.content.match_elements<open_stream_msg>());
+  auto& osm = x.content.get_mutable_as<open_stream_msg>(0);
   visitor f;
   // Utility lambda for aborting the stream on error.
   auto fail = [&](sec y, const char* reason) {
@@ -1108,7 +1106,7 @@ scheduled_actor::handle_open_stream_msg(mailbox_element& x) {
   };
   // Utility for invoking the default handler.
   auto fallback = [&] {
-    auto sres = call_handler(default_handler_, this, x);
+    auto sres = call_handler(default_handler_, this, x.content);
     switch (sres.flag) {
       default:
         CAF_LOG_DEBUG(

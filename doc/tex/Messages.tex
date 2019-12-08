@@ -14,15 +14,6 @@ uses copy-on-write semantics. When dealing with "plain" type-erased tuples,
 users are required to check if a tuple is referenced by others via
 \lstinline^type_erased_tuple::shared^ before modifying its content.
 
-The convenience class \lstinline^message_view^ holds a reference to either a
-stack-located \lstinline^type_erased_tuple^ or a \lstinline^message^. The
-content of the data can be access via \lstinline^message_view::content^ in both
-cases, which returns a \lstinline^type_erased_tuple&^. The content of the view
-can be forced into a message object by calling
-\lstinline^message_view::move_content_to_message^. This member function either
-returns the stored message object or moves the content of a stack-allocated
-tuple into a new message.
-
 \subsection{RTTI and Type Numbers}
 
 All builtin types in CAF have a non-zero 6-bit \emph{type number}. All

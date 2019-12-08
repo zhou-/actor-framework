@@ -111,7 +111,7 @@ protected:
 private:
   bool
   filter(upgrade_lock<detail::shared_spinlock>&, const strong_actor_ptr& sender,
-         message_id mid, message_view& mv, execution_unit* eu);
+         message_id mid, message& mv, execution_unit* eu);
 
   // call without workers_mtx_ held
   void quit(execution_unit* host);

@@ -47,11 +47,11 @@ public:
 auto downstream_messages::nested::task_size(const mailbox_element& x) noexcept
   -> task_size_type {
   task_size_calculator f;
-  return visit(f, x.content().get_as<downstream_msg>(0).content);
+  return visit(f, x.content.get_as<downstream_msg>(0).content);
 }
 
 auto downstream_messages::id_of(mailbox_element& x) noexcept -> key_type {
-  return x.content().get_as<downstream_msg>(0).slots.receiver;
+  return x.content.get_as<downstream_msg>(0).slots.receiver;
 }
 
 bool downstream_messages::enabled(const nested_queue_type& q) noexcept {

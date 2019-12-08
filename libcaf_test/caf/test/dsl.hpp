@@ -232,9 +232,9 @@ private:
 template <class... Ts>
 caf::optional<std::tuple<Ts...>> default_extract(caf_handle x) {
   auto ptr = x->peek_at_next_mailbox_element();
-  if (ptr == nullptr || !ptr->content().template match_elements<Ts...>())
+  if (ptr == nullptr || !ptr->content.template match_elements<Ts...>())
     return caf::none;
-  return ptr->content().template get_as_tuple<Ts...>();
+  return ptr->content.template get_as_tuple<Ts...>();
 }
 
 /// @private
@@ -283,7 +283,7 @@ std::tuple<T, Ts...> extract(caf_handle x) {
     if (ptr == nullptr)
       CAF_FAIL("Mailbox is empty");
     CAF_FAIL(
-      "Message does not match expected pattern: " << to_string(ptr->content()));
+      "Message does not match expected pattern: " << to_string(ptr->content));
   }
   return std::move(*result);
 }
@@ -385,8 +385,8 @@ public:
     auto ptr = dest_->peek_at_next_mailbox_element();
     if (ptr == nullptr)
       CAF_FAIL("no message found");
-    if (!ptr->content().empty())
-      CAF_FAIL("non-empty message found: " << to_string(ptr->content()));
+    if (!ptr->content.empty())
+      CAF_FAIL("non-empty message found: " << to_string(ptr->content));
     run_once();
   }
 

@@ -99,7 +99,7 @@ Actors send error messages to others by returning an \lstinline^error^ \see{erro
 The default handler is called whenever the behavior of an actor did not match
 the input. Actors can change the default handler by calling
 \lstinline^set_default_handler^. The expected signature of the function object
-is \lstinline^result<message> (scheduled_actor*, message_view&)^, whereas the
+is \lstinline^result<message> (scheduled_actor*, message&)^, whereas the
 \lstinline^self^ pointer can again be omitted. The default handler can return a
 response message or cause the runtime to \emph{skip} the input message to allow
 an actor to handle it in a later state. CAF provides the following built-in

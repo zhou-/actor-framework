@@ -52,7 +52,7 @@ public:
   }
 
   void enqueue(mailbox_element_ptr what, execution_unit*) override {
-    mh_(what->content());
+    mh_(what->content);
   }
 
 private:

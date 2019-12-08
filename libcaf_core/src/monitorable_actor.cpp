@@ -221,7 +221,7 @@ size_t monitorable_actor::detach_impl(const attachable::token& what,
 bool monitorable_actor::handle_system_message(mailbox_element& x,
                                               execution_unit* ctx,
                                               bool trap_exit) {
-  auto& msg = x.content();
+  auto& msg = x.content;
   if (!trap_exit && msg.size() == 1 && msg.match_element<exit_msg>(0)) {
     // exits for non-normal exit reasons
     auto& em = msg.get_mutable_as<exit_msg>(0);

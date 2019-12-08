@@ -53,7 +53,7 @@ struct recorder : actor_profiler {
     log.emplace_back(self.name());
     auto& str = log.back();
     str += " got: ";
-    str += to_string(element.content());
+    str += to_string(element.content);
   }
 
   void after_processing(const local_actor& self,
@@ -70,7 +70,7 @@ struct recorder : actor_profiler {
     log.emplace_back(self.name());
     auto& str = log.back();
     str += " sends: ";
-    str += to_string(element.content());
+    str += to_string(element.content);
   }
 
   void before_sending_scheduled(const local_actor& self,
@@ -79,7 +79,7 @@ struct recorder : actor_profiler {
     log.emplace_back(self.name());
     auto& str = log.back();
     str += " sends (scheduled): ";
-    str += to_string(element.content());
+    str += to_string(element.content);
   }
 
   string_list log;

@@ -31,9 +31,11 @@ using namespace caf;
 namespace {
 
 behavior testee_impl() {
-  return {[](ok_atom, int) {
-    // nop
-  }};
+  return {
+    [](ok_atom, int) {
+      // nop
+    },
+  };
 }
 
 struct fixture : test_coordinator_fixture<> {

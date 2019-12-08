@@ -82,7 +82,7 @@ public:
   }
 
   void enqueue(mailbox_element_ptr what, execution_unit*) override {
-    mbox.push_back(what->move_content_to_message());
+    mbox.push_back(what->content);
   }
 
   void attach(attachable_ptr) override {
