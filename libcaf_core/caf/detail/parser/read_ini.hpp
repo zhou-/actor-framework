@@ -69,11 +69,13 @@ void read_ini_comment(State& ps, Consumer&&) {
   fin();
 }
 
-template <class State, class Consumer>
-void read_ini_value(State& ps, Consumer&& consumer);
+template <class State, class Consumer, class InsideList = std::false_type>
+void read_ini_value(State& ps, Consumer&& consumer,
+                    InsideList inside_list = {});
 
 template <class State, class Consumer>
 void read_ini_list(State& ps, Consumer&& consumer) {
+  // clang-format off
   start();
   state(init) {
     epsilon(before_value)
@@ -82,7 +84,7 @@ void read_ini_list(State& ps, Consumer&& consumer) {
     transition(before_value, " \t\n")
     transition(done, ']', consumer.end_list())
     fsm_epsilon(read_ini_comment(ps, consumer), before_value, ';')
-    fsm_epsilon(read_ini_value(ps, consumer), after_value)
+    fsm_epsilon(read_ini_value(ps, consumer, std::true_type{}), after_value)
   }
   state(after_value) {
     transition(after_value, " \t\n")
@@ -94,6 +96,7 @@ void read_ini_list(State& ps, Consumer&& consumer) {
     // nop
   }
   fin();
+  // clang-format on
 }
 
 template <class State, class Consumer>
@@ -178,15 +181,17 @@ void read_ini_uri(State& ps, Consumer&& consumer) {
   fin();
 }
 
-template <class State, class Consumer>
-void read_ini_value(State& ps, Consumer&& consumer) {
+template <class State, class Consumer, class InsideList>
+void read_ini_value(State& ps, Consumer&& consumer, InsideList inside_list) {
+  // clang-format off
   start();
   state(init) {
     fsm_epsilon(read_string(ps, consumer), done, '"')
     fsm_epsilon(read_atom(ps, consumer), done, '\'')
     fsm_epsilon(read_number(ps, consumer), done, '.')
     fsm_epsilon(read_bool(ps, consumer), done, "ft")
-    fsm_epsilon(read_number_or_timespan(ps, consumer), done, "0123456789+-")
+    fsm_epsilon(read_number_or_timespan(ps, consumer, inside_list),
+                done, "0123456789+-")
     fsm_epsilon(read_ini_uri(ps, consumer), done, '<')
     fsm_transition(read_ini_list(ps, consumer.begin_list()), done, '[')
     fsm_transition(read_ini_map(ps, consumer.begin_map()), done, '{')
@@ -195,6 +200,7 @@ void read_ini_value(State& ps, Consumer&& consumer) {
     // nop
   }
   fin();
+  // clang-format on
 }
 
 /// Reads an INI formatted input.
