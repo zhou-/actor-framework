@@ -187,9 +187,9 @@ Adding Custom Message Types
 ---------------------------
 
 CAF requires serialization support for all of its message types (see
-:ref:`type-inspection`). However, CAF also needs a mapping of unique type IDs to
-user-defined types at runtime. This is required to deserialize arbitrary
-messages from the network.
+:ref:`type-inspection`) as well as a mapping of unique type IDs to user-defined
+types (see :ref:`type-id`) in order to deserialize arbitrary messages from the
+network.
 
 The type IDs are assigned by listing all custom types in a *type ID block*. CAF
 assigns ascending IDs to each type by in the block as well as storing the type

@@ -161,6 +161,7 @@ public:
     data_.swap(other.data_);
   }
 
+  /// @private
   void reset(detail::message_data* new_ptr = nullptr,
              bool add_ref = true) noexcept {
     data_.reset(new_ptr, add_ref);

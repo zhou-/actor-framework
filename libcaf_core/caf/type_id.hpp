@@ -55,16 +55,7 @@ struct type_by_id;
 template <type_id_t I>
 using type_by_id_t = typename type_by_id<I>::type;
 
-/// Maps the globally unique ID `V` to a type name.
-template <type_id_t V>
-struct type_name_by_id;
-
-/// Convenience alias for `type_name_by_id<I>::value`.
-/// @relates type_name_by_id
-template <type_id_t I>
-constexpr const char* type_name_by_id_v = type_name_by_id<I>::value;
-
-/// Convenience type that resolves to `type_name_by_id<type_id_v<T>>`.
+/// Maps the type `T` to a human-readable name.
 template <class T>
 struct type_name;
 
@@ -79,6 +70,12 @@ struct type_name<void> {
 /// @relates type_name
 template <class T>
 constexpr const char* type_name_v = type_name<T>::value;
+
+/// Convenience alias for `type_name_v<type_by_id_t<V>>`.
+/// @relates type_name
+template <type_id_t V>
+constexpr const char* type_name_by_id_v = type_name<type_by_id_t<V>>::value;
+
 
 /// The first type ID not reserved by CAF and its modules.
 constexpr type_id_t first_custom_type_id = 200;
@@ -118,10 +115,6 @@ constexpr type_id_t first_custom_type_id = 200;
       static constexpr const char* value                                       \
         = CAF_PP_STR(CAF_PP_EXPAND fully_qualified_name);                      \
     };                                                                         \
-    template <>                                                                \
-    struct type_name_by_id<type_id<CAF_PP_EXPAND fully_qualified_name>::value> \
-      : type_name<CAF_PP_EXPAND fully_qualified_name> {};                      \
-    }
 #else
 #  define CAF_ADD_TYPE_ID(project_name, fully_qualified_name)                  \
     namespace caf {                                                            \
@@ -140,10 +133,6 @@ constexpr type_id_t first_custom_type_id = 200;
       static constexpr const char* value                                       \
         = CAF_PP_STR(CAF_PP_EXPAND fully_qualified_name);                      \
     };                                                                         \
-    template <>                                                                \
-    struct type_name_by_id<type_id<CAF_PP_EXPAND fully_qualified_name>::value> \
-      : type_name<CAF_PP_EXPAND fully_qualified_name> {};                      \
-    }
 #endif
 
 /// Creates a new tag type (atom) in the global namespace and assigns the next

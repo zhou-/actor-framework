@@ -1,143 +1,118 @@
 .. _message:
 
-Type-Erased Tuples, Messages and Message Views
-==============================================
+Messages and Message Views
+==========================
 
-Messages in CAF are stored in type-erased tuples. The actual message type
-itself is usually hidden, as actors use pattern matching to decompose messages
-automatically. However, the classes ``message`` and
-``message_builder`` allow more advanced use cases than only sending
-data from one actor to another.
+Messages in CAF are stored as type-erased, fixed-length, copy-on-write tuples.
+Usually, actors decompose incoming messages automatically by pattern-matching
+the message content to the message handlers.
 
-The interface ``type_erased_tuple`` encapsulates access to arbitrary
-data. This data can be stored on the heap or on the stack. A
-``message`` is a type-erased tuple that is always heap-allocated and
-uses copy-on-write semantics. When dealing with "plain" type-erased tuples,
-users are required to check if a tuple is referenced by others via
-``type_erased_tuple::shared`` before modifying its content.
+However, some use cases (for example when implementing default handlers) require
+users to interact with a ``message`` directly.
 
-The convenience class ``message_view`` holds a reference to either a
-stack-located ``type_erased_tuple`` or a ``message``. The
-content of the data can be access via ``message_view::content`` in both
-cases, which returns a ``type_erased_tuple&``. The content of the view
-can be forced into a message object by calling
-``message_view::move_content_to_message``. This member function either
-returns the stored message object or moves the content of a stack-allocated
-tuple into a new message.
+.. _type-id:
 
-RTTI and Type Numbers
----------------------
+Type IDs: Adding Custom Message Types
+-------------------------------------
 
-All builtin types in CAF have a non-zero 6-bit *type number*. All
-user-defined types are mapped to 0. When querying the run-time type information
-(RTTI) for individual message or tuple elements, CAF returns a pair consisting
-of an integer and a pointer to ``std::type_info``. The first value is
-the 6-bit type number. If the type number is non-zero, the second value is a
-pointer to the C++ type info, otherwise the second value is null. Additionally,
-CAF generates 32 bit *type tokens*. These tokens are *type hints*
-that summarizes all types in a type-erased tuple. Two type-erased tuples are of
-different type if they have different type tokens (the reverse is not true).
+CAF assigns each type an unsigned 16-bit *type ID*. Actors cannot send types
+without such an ID.
 
-Class ``type_erased_tuple``
----------------------------
+Type IDs are assigned at compile time by specializing ``type_id``. More
+specifically, CAF expects each type to specialize these templates:
 
-**Note**: Calling modifiers on a shared type-erased tuple is undefined
-behavior.
+.. code-block:: C++
 
-+----------------------------------------+------------------------------------------------------------+
-| **Observers**                          |                                                            |
-+----------------------------------------+------------------------------------------------------------+
-| ``bool empty()``                       | Returns whether this message is empty.                     |
-+----------------------------------------+------------------------------------------------------------+
-| ``size_t size()``                      | Returns the size of this message.                          |
-+----------------------------------------+------------------------------------------------------------+
-| ``rtti_pair type(size_t pos)``         | Returns run-time type information for the nth element.     |
-+----------------------------------------+------------------------------------------------------------+
-| ``error save(serializer& x)``          | Writes the tuple to ``x``.                                 |
-+----------------------------------------+------------------------------------------------------------+
-| ``error save(size_t n, serializer& x)``| Writes the nth element to ``x``.                           |
-+----------------------------------------+------------------------------------------------------------+
-| ``const void* get(size_t n)``          | Returns a const pointer to the nth element.                |
-+----------------------------------------+------------------------------------------------------------+
-| ``std::string stringify()``            | Returns a string representation of the tuple.              |
-+----------------------------------------+------------------------------------------------------------+
-| ``std::string stringify(size_t n)``    | Returns a string representation of the nth element.        |
-+----------------------------------------+------------------------------------------------------------+
-| ``bool matches(size_t n, rtti_pair)``  | Checks whether the nth element has given type.             |
-+----------------------------------------+------------------------------------------------------------+
-| ``bool shared()``                      | Checks whether more than one reference to the data exists. |
-+----------------------------------------+------------------------------------------------------------+
-| ``bool match_element<T>(size_t n)``    | Checks whether element ``n`` has type ``T``.               |
-+----------------------------------------+------------------------------------------------------------+
-| ``bool match_elements<Ts...>()``       | Checks whether this message has the types ``Ts...``.       |
-+----------------------------------------+------------------------------------------------------------+
-| ``const T& get_as<T>(size_t n)``       | Returns a const reference to the nth element.              |
-+----------------------------------------+------------------------------------------------------------+
-|                                        |                                                            |
-+----------------------------------------+------------------------------------------------------------+
-| **Modifiers**                          |                                                            |
-+----------------------------------------+------------------------------------------------------------+
-| ``void* get_mutable(size_t n)``        | Returns a mutable pointer to the nth element.              |
-+----------------------------------------+------------------------------------------------------------+
-| ``T& get_mutable_as<T>(size_t n)``     | Returns a mutable reference to the nth element.            |
-+----------------------------------------+------------------------------------------------------------+
-| ``void load(deserializer& x)``         | Reads the tuple from ``x``.                                |
-+----------------------------------------+------------------------------------------------------------+
+  /// Maps the type `T` to a globally unique ID.
+  template <class T>
+  struct type_id;
+
+  /// Maps the type `T` to a human-readable name.
+  template <class T>
+  struct type_name;
+
+  /// Maps the globally unique ID `V` to a type (inverse to ::type_id).
+  /// @relates type_id
+  template <type_id_t V>
+  struct type_by_id;
+
+Specializing these templates and assigning IDs is automated by the two macros
+``CAF_BEGIN_TYPE_ID_BLOCK`` and ``CAF_ADD_TYPE_ID`` by listing custom types in a
+*type ID block*.
+
+The types within a named *type ID block* receive ascending IDs, starting at the
+given first ID. In the following example, we forward-declare the types ``foo``
+and ``foo2`` and register them to CAF in a *type ID block*. The name of the type
+ID block is arbitrary, but it must form a valid C++ identifier.
+
+.. literalinclude:: /examples/custom_type/custom_types_1.cpp
+   :language: C++
+   :start-after: --(rst-type-id-block-begin)--
+   :end-before: --(rst-type-id-block-end)--
+
+The *type ID* block equips CAF with all type information required *at
+compile-time*. However, CAF also needs to be able to map type IDs to meta type
+information *at runtime* in order to deserialize messages it receives via the
+network.
+
+Initializing the runtime-type information, users are required to call:
+
+.. code-block:: C++
+
+  init_global_meta_objects<${TypeIdBlock}_type_ids>();
+
+Whereas ``${TypeIdBlock}`` is the name of the type ID block containing the
+user-defined types. In our example above, we would have to call:
+
+.. code-block:: C++
+
+  init_global_meta_objects<custom_types_1_type_ids>();
+
+When calling this function, the current compilation unit must have access to
+*all* ``inspect`` overloads for the listed types (see :ref:`type-inspection`).
+
+As the name suggests, the function ``init_global_meta_objects`` sets *global
+state*. This call is *not* thread safe and an application **must** call this
+function *before* starting an ``actor_system``.
 
 Class ``message``
 -----------------
 
-The class ``message`` includes all member functions of
-``type_erased_tuple``. However, calling modifiers is always guaranteed
-to be safe. A ``message`` automatically detaches its content by copying
-it from the shared data on mutable access. The class further adds the following
-member functions over ``type_erased_tuple``. Note that
-``apply`` only detaches the content if a callback takes mutable
-references as arguments.
-
-+-----------------------------------------------+------------------------------------------------------------+
-| **Observers**                                 |                                                            |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message drop(size_t n)``                    | Creates a new message with all but the first ``n`` values. |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message drop_right(size_t n)``              | Creates a new message with all but the last ``n`` values.  |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message take(size_t n)``                    | Creates a new message from the first ``n`` values.         |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message take_right(size_t n)``              | Creates a new message from the last ``n`` values.          |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message slice(size_t p, size_t n)``         | Creates a new message from ``[p, p + n)``.                 |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message extract(message_handler)``          | See extract_.                                              |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message extract_opts(...)``                 | See extract-opts_.                                         |
-+-----------------------------------------------+------------------------------------------------------------+
-|                                               |                                                            |
-+-----------------------------------------------+------------------------------------------------------------+
-| **Modifiers**                                 |                                                            |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``optional<message> apply(message_handler f)``| Returns ``f(*this)``.                                      |
-+-----------------------------------------------+------------------------------------------------------------+
-|                                               |                                                            |
-+-----------------------------------------------+------------------------------------------------------------+
-| **Operators**                                 |                                                            |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message operator+(message x, message y)``   | Concatenates ``x`` and ``y``.                              |
-+-----------------------------------------------+------------------------------------------------------------+
-| ``message& operator+=(message& x, message y)``| Concatenates ``x`` and ``y``.                              |
-+-----------------------------------------------+------------------------------------------------------------+
++---------------------------+--------------------------------------------------+
+| **Observers**                                                                |
++---------------------------+--------------------------------------------------+
+| ``types``                 | Returns the type IDs of all elements.            |
++---------------------------+--------------------------------------------------+
+| ``size``                  | Returns the size of this message.                |
++---------------------------+--------------------------------------------------+
+| ``empty``                 | Returns ``size() == 0``.                         |
++---------------------------+--------------------------------------------------+
+| ``operator bool``         | Returns whether this message contains any data.  |
++---------------------------+--------------------------------------------------+
+| ``operator!``             | Returns the inverse of ``operator bool``.        |
++---------------------------+--------------------------------------------------+
+| ``save``                  | Serialiyes the content of this message.          |
++---------------------------+--------------------------------------------------+
+| ``type_at``               | Returns the type ID of a single element.         |
++---------------------------+--------------------------------------------------+
+| ``match_element<T>``      | Returns `type_id_v<T> == type_at(index)`.        |
++---------------------------+--------------------------------------------------+
+| ``get_as<T>``             | Returns a string representation of the tuple.    |
++---------------------------+--------------------------------------------------+
+| ``match_elements<Ts...>`` | Returns `types() == make_type_id_list<Ts...>()`. |
++---------------------------+--------------------------------------------------+
+| **Modifiers**                                                                |
++---------------------------+--------------------------------------------------+
+| ``swap``                  | Exchanges the content of `*this` and `other`.    |
++---------------------------+--------------------------------------------------+
+| ``get_mutable_as<T>``     | Returns a mutable reference to the nth element.  |
++---------------------------+--------------------------------------------------+
+| ``load``                  | Writes the tuple to ``x``.                       |
++---------------------------+--------------------------------------------------+
 
 Class ``message_builder``
 -------------------------
 
-+---------------------------------------------------+-----------------------------------------------------+
-| **Constructors**                                  |                                                     |
-+---------------------------------------------------+-----------------------------------------------------+
-| ``(void)``                                        | Creates an empty message builder.                   |
-+---------------------------------------------------+-----------------------------------------------------+
-| ``(Iter first, Iter last)``                       | Adds all elements from range ``[first, last)``.     |
-+---------------------------------------------------+-----------------------------------------------------+
-|                                                   |                                                     |
 +---------------------------------------------------+-----------------------------------------------------+
 | **Observers**                                     |                                                     |
 +---------------------------------------------------+-----------------------------------------------------+
@@ -163,91 +138,3 @@ Class ``message_builder``
 +---------------------------------------------------+-----------------------------------------------------+
 | ``message move_to_message()``                     | Transfers ownership of its data to the new message. |
 +---------------------------------------------------+-----------------------------------------------------+
-
-.. _extract:
-
-Extracting
-----------
-
-The member function ``message::extract`` removes matched elements from a
-message. x Messages are filtered by repeatedly applying a message handler to the
-greatest remaining slice, whereas slices are generated in the sequence
-``[0, size)``, ``[0, size-1)``, ``...``, ``[1, size-1)``, ``...``,
-``[size-1, size)``. Whenever a slice is matched, it is removed from the message
-and the next slice starts at the same index on the reduced message.
-
-For example:
-
-.. code-block:: C++
-
-   auto msg = make_message(1, 2.f, 3.f, 4);
-   // remove float and integer pairs
-   auto msg2 = msg.extract({
-     [](float, float) { },
-     [](int, int) { }
-   });
-   assert(msg2 == make_message(1, 4));
-
-Step-by-step explanation:
-
-* Slice 1: ``(1, 2.f, 3.f, 4)``, no match
-* Slice 2: ``(1, 2.f, 3.f)``, no match
-* Slice 3: ``(1, 2.f)``, no match
-* Slice 4: ``(1)``, no match
-* Slice 5: ``(2.f, 3.f, 4)``, no match
-* Slice 6: ``(2.f, 3.f)``, *match*; new message is ``(1, 4)``
-* Slice 7: ``(4)``, no match
-
-Slice 7 is ``(4)``, i.e., does not contain the first element, because
-the match on slice 6 occurred at index position 1. The function
-``extract`` iterates a message only once, from left to right. The
-returned message contains the remaining, i.e., unmatched, elements.
-
-.. _extract-opts:
-
-Extracting Command Line Options
--------------------------------
-
-The class ``message`` also contains a convenience interface to
-``extract`` for parsing command line options: the member function
-``extract_opts``.
-
-.. code-block:: C++
-
-   int main(int argc, char** argv) {
-     uint16_t port;
-     string host = "localhost";
-     auto res = message_builder(argv + 1, argv + argc).extract_opts({
-       {"port,p", "set port", port},
-       {"host,H", "set host (default: localhost)", host},
-       {"verbose,v", "enable verbose mode"}
-     });
-     if (! res.error.empty()) {
-       // read invalid CLI arguments
-       cerr << res.error << endl;
-       return 1;
-     }
-     if (res.opts.count("help") > 0) {
-       // CLI arguments contained "-h", "--help", or "-?" (builtin);
-       cout << res.helptext << endl;
-       return 0;
-     }
-     if (! res.remainder.empty()) {
-       // res.remainder stors all extra arguments that weren't consumed
-     }
-     if (res.opts.count("verbose") > 0) {
-       // enable verbose mode
-     }
-     // ...
-   }
-
-   /*
-   Output of ./program_name -h:
-
-   Allowed options:
-     -p [--port] arg  : set port
-     -H [--host] arg  : set host (default: localhost)
-     -v [--verbose]   : enable verbose mode
-   */
-
-

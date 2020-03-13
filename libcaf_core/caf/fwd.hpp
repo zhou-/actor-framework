@@ -49,7 +49,6 @@ template <class> struct timeout_definition;
 template <class> struct type_id;
 
 template <uint16_t> struct type_by_id;
-template <uint16_t> struct type_name_by_id;
 
 // -- 2 param templates --------------------------------------------------------
 
