@@ -1,0 +1,13 @@
+windows_task:
+  windows_container:
+    image: cirrusci/windowsservercore:cmake
+  prepare_script: |
+    choco install -y --no-progress openssl
+  build_script: |
+    mkdir build
+    cd build
+    cmake -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
+    cmake --build . --config Release
+  test_script: |
+    cd build
+    ctest --config Release
