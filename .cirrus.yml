@@ -4,6 +4,7 @@ windows_task:
   prepare_script: |
     choco install -y --no-progress openssl
   build_script: |
+    set PATH=%PATH%;C:\Program Files\CMake\bin
     mkdir build
     cd build
     cmake -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
