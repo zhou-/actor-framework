@@ -24,7 +24,27 @@ windows_build_template: &WindowsBuildTemplate
     cd build
     ctest --config %CAF_BUILD_TYPE% --output-on-failure
 
-# -- UNIX builds ---------------------------------------------------------------
+unix_build_template: &UnixBuildTemplate
+  build_script: |
+    if command -v cmake3 >/dev/null 2>&1 ; then
+      CMakeCommand="cmake3"
+    else
+      CMakeCommand="cmake"
+    fi
+    mkdir build
+    cd build
+    $CMakeCommand -DCMAKE_BUILD_TYPE=$CAF_BUILD_TYPE ..
+    $CMakeCommand --build . --parallel $CAF_NUM_CORES
+  test_script: |
+    if command -v ctest3 >/dev/null 2>&1 ; then
+      CTestCommand="ctest3"
+    else
+      CTestCommand="ctest"
+    fi
+    cd build
+    $CTestCommand --output-on-failure
+
+# -- FreeBSD builds ------------------------------------------------------------
 
 task:
   freebsd_instance:
@@ -35,18 +55,16 @@ task:
     pkg install -y git cmake
   matrix:
     - name: "freebsd:debug"
-      build_script: ./.cirrus/unix-build.sh
-      test_script: ./.cirrus/unix-test.sh
+      << : *UnixBuildTemplate
       env:
         CAF_BUILD_TYPE: Debug
     - name: "freebsd:release"
-      build_script: ./.cirrus/unix-build.sh
-      test_script: ./.cirrus/unix-test.sh
+      << : *UnixBuildTemplate
       env:
         CAF_BUILD_TYPE: Release
   << : *EnvironmentTemplate
 
-# -- Windows build -------------------------------------------------------------
+# -- Windows builds ------------------------------------------------------------
 
 task:
   windows_container:
