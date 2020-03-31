@@ -1,17 +1,30 @@
+# -- global settings -----------------------------------------------------------
+
 cpu: &NumCores 8
 memory: &Memory 16G
+
+# -- templates -----------------------------------------------------------------
 
 environment_template: &EnvironmentTemplate
   env:
     CAF_NUM_CORES: *NumCores
 
-unix_test: &UnixTest |
-  cd build
-  ctest --output-on-failure
-
 resources_template: &ResourcesTemplate
   cpu: *NumCores
   memory: *Memory
+
+windows_build_template: &WindowsBuildTemplate
+  build_script: |
+    set PATH=%PATH%;C:\Program Files\CMake\bin
+    mkdir build
+    cd build
+    cmake -A x64 -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
+    cmake --build . --config %CAF_BUILD_TYPE% --parallel %CAF_NUM_CORES%
+  test_script: |
+    cd build
+    ctest --config %CAF_BUILD_TYPE% --output-on-failure
+
+# -- UNIX builds ---------------------------------------------------------------
 
 task:
   freebsd_instance:
@@ -33,19 +46,21 @@ task:
         CAF_BUILD_TYPE: Release
   << : *EnvironmentTemplate
 
-windows_task:
+# -- Windows build -------------------------------------------------------------
+
+task:
   windows_container:
     image: cirrusci/windowsservercore:cmake
     << : *ResourcesTemplate
   prepare_script: |
     choco install -y --no-progress openssl
-  build_script: |
-    set PATH=%PATH%;C:\Program Files\CMake\bin
-    mkdir build
-    cd build
-    cmake -A x64 -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
-    cmake --build . --config Release --parallel %CAF_NUM_CORES%
-  test_script: |
-    cd build
-    ctest --config Release --output-on-failure
+  matrix:
+    - name: "windows:debug"
+      << : *WindowsBuildTemplate
+      env:
+        CAF_BUILD_TYPE: Debug
+    - name: "windows:release"
+      << : *WindowsBuildTemplate
+      env:
+        CAF_BUILD_TYPE: Release
   << : *EnvironmentTemplate
