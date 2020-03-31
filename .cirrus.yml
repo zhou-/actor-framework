@@ -19,7 +19,7 @@ windows_build_template: &WindowsBuildTemplate
     mkdir build
     cd build
     cmake -A x64 -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
-    cmake --build . --config %CAF_BUILD_TYPE% --parallel %CAF_NUM_CORES%
+    cmake --build . --config %CAF_BUILD_TYPE% -- -m:%CAF_NUM_CORES%
   test_script: |
     cd build
     ctest --config %CAF_BUILD_TYPE% --output-on-failure
