@@ -1,6 +1,18 @@
+cpu: &NumCores 8
+memory: &Memory 16G
+
+environment_template: &EnvironmentTemplate
+  env:
+    CAF_NUM_CORES: *NumCores
+
+resources_template: &ResourcesTemplate
+  cpu: *NumCores
+  memory: *Memory
+
 windows_task:
   windows_container:
     image: cirrusci/windowsservercore:cmake
+    << : *ResourcesTemplate
   prepare_script: |
     choco install -y --no-progress openssl
   build_script: |
@@ -8,7 +20,8 @@ windows_task:
     mkdir build
     cd build
     cmake -A x64 -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
-    cmake --build . --config Release
+    cmake --build . --config Release --parallel %CAF_NUM_CORES%
   test_script: |
     cd build
     ctest --config Release
+  << : *EnvironmentTemplate
