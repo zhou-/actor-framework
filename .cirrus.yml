@@ -5,9 +5,33 @@ environment_template: &EnvironmentTemplate
   env:
     CAF_NUM_CORES: *NumCores
 
+unix_test: &UnixTest |
+  cd build
+  ctest --output-on-failure
+
 resources_template: &ResourcesTemplate
   cpu: *NumCores
   memory: *Memory
+
+task:
+  freebsd_instance:
+    image_family: freebsd-12-1
+    << : *ResourcesTemplate
+  prepare_script: |
+    env ASSUME_ALWAYS_YES=YES pkg bootstrap
+    pkg install -y git cmake
+  matrix:
+    - name: "freebsd:debug"
+      build_script: ./.cirrus/unix-build.sh
+      test_script: ./.cirrus/unix-test.sh
+      env:
+        CAF_BUILD_TYPE: Debug
+    - name: "freebsd:release"
+      build_script: ./.cirrus/unix-build.sh
+      test_script: ./.cirrus/unix-test.sh
+      env:
+        CAF_BUILD_TYPE: Release
+  << : *EnvironmentTemplate
 
 windows_task:
   windows_container:
@@ -23,5 +47,5 @@ windows_task:
     cmake --build . --config Release --parallel %CAF_NUM_CORES%
   test_script: |
     cd build
-    ctest --config Release
+    ctest --config Release --output-on-failure
   << : *EnvironmentTemplate
