@@ -44,6 +44,23 @@ unix_build_template: &UnixBuildTemplate
     cd build
     $CTestCommand --output-on-failure
 
+# -- CentOS 7 builds (with GCC 7) ----------------------------------------------
+
+task:
+  container:
+    dockerfile: .cirrus/centos-7/Dockerfile
+    << : *ResourcesTemplate
+  matrix:
+    - name: "centos-7:debug"
+      << : *UnixBuildTemplate
+      env:
+        CAF_BUILD_TYPE: Debug
+    - name: "centos-7:release"
+      << : *UnixBuildTemplate
+      env:
+        CAF_BUILD_TYPE: Release
+  << : *EnvironmentTemplate
+
 # -- FreeBSD builds ------------------------------------------------------------
 
 task:
