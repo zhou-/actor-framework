@@ -22,7 +22,7 @@ windows_build_template: &WindowsBuildTemplate
     cmake --build . --config %CAF_BUILD_TYPE%
   test_script: |
     cd build
-    ctest --config %CAF_BUILD_TYPE% --output-on-failure
+    ctest --config %CAF_BUILD_TYPE% --output-on-failure -E openssl
 
 unix_build_template: &UnixBuildTemplate
   build_script: |
@@ -42,7 +42,7 @@ unix_build_template: &UnixBuildTemplate
       CTestCommand="ctest"
     fi
     cd build
-    $CTestCommand --output-on-failure
+    $CTestCommand --output-on-failure -E openssl
 
 # -- CentOS 7 builds (with GCC 7) ----------------------------------------------
 
