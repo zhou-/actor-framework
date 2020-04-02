@@ -18,8 +18,8 @@ windows_build_template: &WindowsBuildTemplate
     set PATH=%PATH%;C:\Program Files\CMake\bin
     mkdir build
     cd build
-    cmake -A x64 -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" ..
-    cmake --build . --config %CAF_BUILD_TYPE% -- -m:%CAF_NUM_CORES%
+    cmake -A x64 -DOPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64" -DEXTRA_FLAGS=/MP%CAF_NUM_CORES% ..
+    cmake --build . --config %CAF_BUILD_TYPE%
   test_script: |
     cd build
     ctest --config %CAF_BUILD_TYPE% --output-on-failure
