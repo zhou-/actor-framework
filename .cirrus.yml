@@ -81,6 +81,27 @@ task:
         CAF_BUILD_TYPE: Release
   << : *EnvironmentTemplate
 
+# -- MacOS builds --------------------------------------------------------------
+
+task:
+  osx_instance:
+    image: catalina-base
+    # The macOS image does not support cpu/memory settings.
+  prepare_script: |
+    brew install cmake openssl
+  matrix:
+    - name: "macos:debug"
+      << : *UnixBuildTemplate
+      env:
+        CAF_BUILD_TYPE: Debug
+    - name: "macos:release"
+      << : *UnixBuildTemplate
+      env:
+        CAF_BUILD_TYPE: Release
+  # The macOS image is hardwired to 2 cores / 4 threads.
+  env:
+    CAF_NUM_CORES: 4
+
 # -- Windows builds ------------------------------------------------------------
 
 task:
