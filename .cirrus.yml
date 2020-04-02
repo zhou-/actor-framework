@@ -33,7 +33,7 @@ unix_build_template: &UnixBuildTemplate
     fi
     mkdir build
     cd build
-    $CMakeCommand -DCMAKE_BUILD_TYPE=$CAF_BUILD_TYPE ..
+    $CMakeCommand -DCMAKE_BUILD_TYPE=$CAF_BUILD_TYPE -DCAF_NO_OPENCL=YES ..
     $CMakeCommand --build . --parallel $CAF_NUM_CORES
   test_script: |
     if command -v ctest3 >/dev/null 2>&1 ; then
