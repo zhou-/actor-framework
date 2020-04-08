@@ -311,7 +311,7 @@ public:
     TRACE(name_, ack_open, CAF_ARG(slots),
           CAF_ARG2("sender", name_of(x.rebind_to)), CAF_ARG(x));
     CAF_REQUIRE_EQUAL(sender, x.rebind_to);
-    scheduled_actor::handle_upstream_msg(slots, sender, x);
+    scheduled_actor::invoke(slots, sender, x);
   }
 
   void operator()(stream_slots slots, actor_addr& sender,
@@ -418,11 +418,11 @@ struct msg_visitor {
     self->current_mailbox_element(&x);
     auto& um = x.content().get_mutable_as<upstream_msg>(0);
     auto f = detail::make_overload(
-      [&](upstream_msg::ack_open& y) {
-        (*self)(um.slots, um.sender, y);
+      [&](upstream_msg::ack_open&) {
+        (*self)(um);
       },
-      [&](upstream_msg::ack_batch& y) {
-        (*self)(um.slots, um.sender, y);
+      [&](upstream_msg::ack_batch&) {
+        (*self)(um);
       },
       [](upstream_msg::drop&) {
         CAF_FAIL("did not expect upstream_msg::drop");

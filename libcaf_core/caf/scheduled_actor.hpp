@@ -100,8 +100,6 @@ public:
     ordinary,
     /// Triggers handlers for system messages such as `exit_msg` or `down_msg`.
     internal,
-    /// Delays processing.
-    skipped,
   };
 
   /// Result of one-shot activations.
@@ -194,33 +192,6 @@ public:
   /// Function object for handling exit messages.
   using exception_handler = std::function<error(pointer, std::exception_ptr&)>;
 #endif // CAF_NO_EXCEPTIONS
-
-  /// Consumes messages from the mailbox.
-  struct mailbox_visitor {
-    scheduled_actor* self;
-    size_t& handled_msgs;
-    size_t max_throughput;
-
-    /// Consumes upstream messages.
-    intrusive::task_result operator()(size_t, upstream_queue&,
-                                      mailbox_element&);
-
-    /// Consumes downstream messages.
-    intrusive::task_result
-    operator()(size_t, downstream_queue&, stream_slot slot,
-               policy::downstream_messages::nested_queue_type&,
-               mailbox_element&);
-
-    // Dispatches asynchronous messages with high and normal priority to the
-    // same handler.
-    template <class Queue>
-    intrusive::task_result operator()(size_t, Queue&, mailbox_element& x) {
-      return (*this)(x);
-    }
-
-    // Consumes asynchronous messages.
-    intrusive::task_result operator()(mailbox_element& x);
-  };
 
   // -- static helper functions ------------------------------------------------
 
@@ -437,15 +408,6 @@ public:
   /// Adds a callback for a multiplexed response.
   void add_multiplexed_response_handler(message_id response_id, behavior bhvr);
 
-  /// Returns the category of `x`.
-  message_category categorize(mailbox_element& x);
-
-  /// Tries to consume `x`.
-  invoke_message_result consume(mailbox_element& x);
-
-  /// Tries to consume `x`.
-  void consume(mailbox_element_ptr x);
-
   /// Activates an actor and runs initialization code if necessary.
   /// @returns `true` if the actor is alive and ready for `reactivate`,
   ///          `false` otherwise.
@@ -520,45 +482,6 @@ public:
   /// otherwise.
   virtual void erase_inbound_paths_later(const stream_manager* mgr,
                                          error reason);
-
-  // -- handling of stream messages --------------------------------------------
-
-  void handle_upstream_msg(stream_slots slots, actor_addr& sender,
-                           upstream_msg::ack_open& x);
-
-  template <class T>
-  void handle_upstream_msg(stream_slots slots, actor_addr& sender, T& x) {
-    CAF_LOG_TRACE(CAF_ARG(slots) << CAF_ARG(sender) << CAF_ARG(x));
-    CAF_IGNORE_UNUSED(sender);
-    auto i = stream_managers_.find(slots.receiver);
-    if (i == stream_managers_.end()) {
-      auto j = pending_stream_managers_.find(slots.receiver);
-      if (j != pending_stream_managers_.end()) {
-        j->second->stop(sec::stream_init_failed);
-        pending_stream_managers_.erase(j);
-        return;
-      }
-      CAF_LOG_INFO("no manager found:" << CAF_ARG(slots));
-      // TODO: replace with `if constexpr` when switching to C++17
-      if (std::is_same<T, upstream_msg::ack_batch>::value) {
-        // Make sure the other actor does not falsely believe us a source.
-        inbound_path::emit_irregular_shutdown(this, slots, current_sender(),
-                                              sec::invalid_upstream);
-      }
-      return;
-    }
-    CAF_ASSERT(i->second != nullptr);
-    auto ptr = i->second;
-    ptr->handle(slots, x);
-    if (ptr->done()) {
-      CAF_LOG_DEBUG("done sending:" << CAF_ARG(slots));
-      ptr->stop();
-      erase_stream_manager(ptr);
-    } else if (ptr->out().path(slots.receiver) == nullptr) {
-      CAF_LOG_DEBUG("done sending on path:" << CAF_ARG(slots.receiver));
-      erase_stream_manager(slots.receiver);
-    }
-  }
 
   /// @cond PRIVATE
 
@@ -652,6 +575,20 @@ public:
   /// @endcond
 
 protected:
+  // -- helper functions for message processing --------------------------------
+
+  /// Returns the category of `x`.
+  message_category categorize(mailbox_element& x);
+
+  /// Tries to consume `x`.
+  invoke_message_result try_invoke(mailbox_element& x);
+
+  /// Tries to consume `x`.
+  invoke_message_result try_invoke(mailbox_element& x, open_stream_msg& msg);
+
+  /// Consumes `x`.
+  void invoke(mailbox_element& x, upstream_msg& msg);
+
   // -- member variables -------------------------------------------------------
 
   /// Stores incoming messages.
@@ -707,8 +644,6 @@ protected:
   /// Customization point for setting a default exception callback.
   exception_handler exception_handler_;
 #endif // CAF_NO_EXCEPTIONS
-
-  /// @endcond
 };
 
 } // namespace caf
