@@ -72,6 +72,14 @@ endif()
 
 # -- compiler setup ------------------------------------------------------------
 
+# Calls target_link_libraries for non-object library targets.
+function(caf_target_link_libraries target)
+  get_target_property(targetType ${target} TYPE)
+  if (NOT targetType STREQUAL OBJECT_LIBRARY)
+    target_link_libraries(${target} ${ARGN})
+  endif()
+endfunction()
+
 function(caf_set_default_properties)
   foreach(target ${ARGN})
     if(MSVC)
@@ -95,9 +103,14 @@ function(caf_set_default_properties)
       target_compile_options(${target} PRIVATE
                              -fsanitize=${CAF_SANITIZERS}
                              -fno-omit-frame-pointer)
-      target_link_libraries(${target} PRIVATE
-                            -fsanitize=${CAF_SANITIZERS}
-                            -fno-omit-frame-pointer)
+      caf_target_link_libraries(${target} PRIVATE
+                                -fsanitize=${CAF_SANITIZERS}
+                                -fno-omit-frame-pointer)
+    endif()
+    # All of our object libraries can end up in shared libs => PIC.
+    get_target_property(targetType ${target} TYPE)
+    if (targetType STREQUAL OBJECT_LIBRARY)
+      set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE ON)
     endif()
     # We always place headers in the same directories and need to find generated
     # headers from the bin dir.
@@ -269,6 +282,7 @@ function(caf_export_and_install_lib component)
   string(TOUPPER "CAF_${component}_EXPORT" exportMacroName)
   target_include_directories(libcaf_${component} INTERFACE
                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                             $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
                              $<INSTALL_INTERFACE:include>)
   generate_export_header(
     libcaf_${component}
